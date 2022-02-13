@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from discord_slash import SlashCommand
 from config import LOG_CHANNELS, WHITELIST_ROLES
 from key import KEY
 
@@ -9,7 +8,6 @@ intents.members = True
 intents.guilds = True
 
 client = commands.Bot(command_prefix='E', intents=intents)
-slash = SlashCommand(client, sync_commands=True)
 
 
 def should_be_logged(member):
