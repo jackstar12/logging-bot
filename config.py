@@ -5,3 +5,11 @@ LOG_CHANNELS = {
 WHITELIST_ROLES = [
     715567086642135061
 ]
+AUTO_MESSAGES = [
+    {
+        'guild_id': 0,
+        'channel_id': 0,
+        'message': '!d bump',
+        'interval': '2h 1m'
+    }
+]

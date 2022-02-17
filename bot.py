@@ -1,7 +1,13 @@
+import logging
+from datetime import datetime, timedelta
+from threading import Timer
+from typing import Optional
+
 import discord
 from discord.ext import commands
-from config import LOG_CHANNELS, WHITELIST_ROLES
+from config import LOG_CHANNELS, WHITELIST_ROLES, AUTO_MESSAGES
 from key import KEY
+from dataclasses import dataclass
 
 intents = discord.Intents().default()
 intents.members = True
@@ -33,7 +39,7 @@ def add_member_information(embed, member: discord.Member):
 
 
 def add_user(embed, user: discord.Member):
-    embed.add_field(name="User", value=f'<@{user.id}>\n{user.id}')
+    embed.add_field(name="User", value=f'{user}\n<@{user.id}>\n{user.id}')
 
 
 def add_channel(embed, channel: discord.TextChannel):
@@ -102,6 +108,63 @@ async def log_embed(guild_id, embed):
     guild = client.get_guild(guild_id)
     channel = guild.get_channel(LOG_CHANNELS[guild_id])
     await channel.send(content='', embed=embed)
+
+
+def send_forever(interval: timedelta, message: str, guild_id: int, channel_id: int):
+    async def wrapper():
+        try:
+            guild = client.get_guild(guild_id)
+            channel = guild.get_channel(channel_id)
+            await channel.send(message)
+        except AttributeError as e:
+            logging.error(f'Invalid guild configuration. {e}')
+        timer = Timer(interval=interval.total_seconds(), function=wrapper)
+        timer.daemon = True
+        timer.start()
+
+
+def calc_time_from_time_args(time_str: str) -> Optional[timedelta]:
+    """
+    Calculates time from given time args.
+    Arg Format:
+      <n><f>
+      where <f> can be m (minutes), h (hours), d (days) or w (weeks)
+
+    :raise:
+      ValueError if invalid arg is given
+    :return:
+      Calculated timedelta or None if None was passed in
+    """
+
+    if not time_str:
+        return None
+
+    time_str = time_str.lower()
+    minute, hour, day, week = 0, 0, 0, 0
+    args = time_str.split(' ')
+    if len(args) > 0:
+        for arg in args:
+            try:
+                if 'h' in arg:
+                    hour += int(arg.rstrip('h'))
+                elif 'm' in arg:
+                    minute += int(arg.rstrip('m'))
+                elif 'w' in arg:
+                    week += int(arg.rstrip('w'))
+                elif 'd' in arg:
+                    day += int(arg.rstrip('d'))
+                else:
+                    raise ValueError(f'Invalid time argument: {arg}')
+            except ValueError:  # Make sure both cases are treated the same
+                raise ValueError(f'Invalid time argument: {arg}')
+    return timedelta(hours=hour, minutes=minute, days=day, weeks=week)
+
+
+for message in AUTO_MESSAGES:
+    send_forever(interval=calc_time_from_time_args(message['interval']),
+                 message=message['message'],
+                 guild_id=message['guild_id'],
+                 channel_id=message['channel_id'])
 
 
 client.run(KEY)
