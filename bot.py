@@ -28,6 +28,11 @@ def should_be_logged(member):
 @client.event
 async def on_ready():
     print('Bot Ready')
+    for message in AUTO_MESSAGES:
+        send_forever(interval=calc_time_from_time_args(message['interval']),
+                     message=message['message'],
+                     guild_id=message['guild_id'],
+                     channel_id=message['channel_id'])
 
 
 def add_member_information(embed, member: discord.Member):
@@ -118,9 +123,11 @@ def send_forever(interval: timedelta, message: str, guild_id: int, channel_id: i
             await channel.send(message)
         except AttributeError as e:
             logging.error(f'Invalid guild configuration. {e}')
-        timer = Timer(interval=interval.total_seconds(), function=wrapper)
+            return
+        timer = Timer(interval=interval.total_seconds(), function=lambda: client.loop.create_task(wrapper()))
         timer.daemon = True
         timer.start()
+    client.loop.create_task(wrapper())
 
 
 def calc_time_from_time_args(time_str: str) -> Optional[timedelta]:
@@ -158,13 +165,6 @@ def calc_time_from_time_args(time_str: str) -> Optional[timedelta]:
             except ValueError:  # Make sure both cases are treated the same
                 raise ValueError(f'Invalid time argument: {arg}')
     return timedelta(hours=hour, minutes=minute, days=day, weeks=week)
-
-
-for message in AUTO_MESSAGES:
-    send_forever(interval=calc_time_from_time_args(message['interval']),
-                 message=message['message'],
-                 guild_id=message['guild_id'],
-                 channel_id=message['channel_id'])
 
 
 client.run(KEY)

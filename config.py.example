@@ -7,8 +7,8 @@ WHITELIST_ROLES = [
 ]
 AUTO_MESSAGES = [
     {
-        'guild_id': 0,
-        'channel_id': 0,
+        'guild_id': 443583326507499520,
+        'channel_id': 641597836647202838,
         'message': '!d bump',
         'interval': '2h 1m'
     }
